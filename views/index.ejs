@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>ei</title>
+  </head>
+  <body>
+    <div class="container">
+      <br><br><br>
+      <input type="text" class="form-control" id="posttext" placeholder="จะโพสอะไรก้เขียนในนี้">
+      <br>
+      <button class="btn btn-primary" onclick="add();">
+        add post
+      </button>
+      <br><br><br>
+      <ul class="list-group list-group-flush" id="postlist">
+      </ul>
+    </div>
+
+    <div class="modal fade" id="namemodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form autocomplete="off" id="nameform">
+            <div class="modal-header">
+            </div>
+            <div class="modal-body">
+              <input type="text" class="form-control" placeholder="Name: " id="nameinput">
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">OK</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/getstream/dist/js_min/getstream.js"></script>
+    <script>
+      let client = stream.connect('sj5sb9224r84', null,  '47981');
+      let feed = client.feed('group', 'si128', '<%= feedToken %>');
+      let username;
+
+      feed.subscribe(data => {
+        console.log('updated');
+        alert('หน้าฟีดมีการอัพเดท');
+        refresh();
+      }).then(() => {
+        console.log('ready');
+      }).catch(err => {
+        console.log(err);
+      });
+
+      let refresh = () => {
+        feed.get()
+          .then(res => {
+            $('#postlist').empty();
+            console.log(res.results);
+            res.results.forEach((e, i, arr) => {
+              $('#postlist').append('<li style="border-top: 0 none;" class="list-group-item"><div class="card" style="width: 18rem;"><div class="card-body"><h5 class="card-title">' + e.actor +  '</h5><p class="card-text">' + e.message + '</p></div></div></li>');
+            });
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      };
+      refresh();
+
+      $('#namemodal').modal('show');
+
+      $('#nameform').submit(function(event) {
+        username = $('#nameinput').val();
+        $('#namemodal').modal('hide');
+        event.preventDefault();
+        return false;
+      });
+
+      let add = () => {
+        $.post('/post', {
+          group: 'si128',
+          activity: {
+            actor: username,
+            verb: 'post',
+            object: '1',
+            message: $('#posttext').val()
+          }
+        }, res => {
+          console.log(res);
+          $('#posttext').val('');
+        });
+      }
+    </script>
+  </body>
+</html>
