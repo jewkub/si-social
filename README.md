@@ -1,12 +1,12 @@
 # si-social
-> 🌟 Student Impact 🌟
+> Student Impact
 
 ![GitHub](https://img.shields.io/github/license/jewkub/si-social.svg)
 ![Travis (.com)](https://img.shields.io/travis/com/jewkub/si-social.svg)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3791f84ebda04d4783319cef714297dc)](https://www.codacy.com/app/jewkub/si-social?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jewkub/si-social&amp;utm_campaign=Badge_Grade)
 ![GitHub last commit](https://img.shields.io/github/last-commit/jewkub/si-social.svg)
 
-Social app used for SI
+🌟 Social app used in SI 🌟
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

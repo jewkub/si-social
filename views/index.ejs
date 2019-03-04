@@ -17,14 +17,15 @@
       </ul>
     </div>
 
-    <div class="modal fade" id="namemodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="idmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-          <form autocomplete="off" id="nameform">
+          <form autocomplete="off" id="idform">
             <div class="modal-header">
+              <h5 class="modal-title">Log in</h5>
             </div>
             <div class="modal-body">
-              <input type="text" class="form-control" placeholder="Name: " id="nameinput">
+              <input type="text" class="form-control" placeholder="รหัสนศ (ไม่ต้องมี u นำหน้า)" id="idinput">
             </div>
             <div class="modal-footer">
               <button type="submit" class="btn btn-primary">OK</button>
@@ -33,6 +34,27 @@
         </div>
       </div>
     </div>
+
+    <div class="modal fade" id="pwmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form autocomplete="off" id="pwform" method="post" action="/login">
+            <div class="modal-header">
+              <h5 class="modal-title">Password</h5>
+            </div>
+            <div class="modal-body">
+              <p>Pw ?</p>
+              <input style="display: none;" name="id" id="idhidden">
+              <input type="password" class="form-control" placeholder="รหัสผ่าน" id="passwordinput" name="password">
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">OK</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
@@ -40,9 +62,9 @@
     <script>
       let client = stream.connect('sj5sb9224r84', null,  '47981');
       let feed = client.feed('group', 'si128', '<%= feedToken %>');
-      let username;
+      let id;
 
-      feed.subscribe(data => {
+      /* feed.subscribe(data => {
         console.log('updated');
         alert('หน้าฟีดมีการอัพเดท');
         refresh();
@@ -50,13 +72,14 @@
         console.log('ready');
       }).catch(err => {
         console.log(err);
-      });
+      }); */
+      // so noob
 
       let refresh = () => {
         feed.get()
           .then(res => {
             $('#postlist').empty();
-            console.log(res.results);
+            // console.log(res.results);
             res.results.forEach((e, i, arr) => {
               $('#postlist').append('<li style="border-top: 0 none;" class="list-group-item"><div class="card" style="width: 18rem;"><div class="card-body"><h5 class="card-title">' + e.actor +  '</h5><p class="card-text">' + e.message + '</p></div></div></li>');
             });
@@ -66,12 +89,32 @@
           });
       };
       refresh();
+      setInterval(refresh, 3000);
 
-      $('#namemodal').modal('show');
-
-      $('#nameform').submit(function(event) {
-        username = $('#nameinput').val();
-        $('#namemodal').modal('hide');
+      <% if (!user) { %>
+        $('#idmodal').modal({
+          show: true,
+          keyboard: false,
+          backdrop: 'static'
+        });
+      <% } %>
+      $('#idform').submit(function(event) {
+        id = $('#idinput').val();
+        $('#idmodal').modal('hide');
+        $.get('/checkid', {
+          id: id
+        }, res => {
+          console.log(res);
+          if(!res.exist) window.location = '/register?id=' + id;
+          else {
+            $('#idhidden').val(id);
+            $('#pwmodal').modal({
+              show: true,
+              keyboard: false,
+              backdrop: 'static'
+            });
+          }
+        });
         event.preventDefault();
         return false;
       });
@@ -80,7 +123,7 @@
         $.post('/post', {
           group: 'si128',
           activity: {
-            actor: username,
+            actor: '<%= user && user.name %>',
             verb: 'post',
             object: '1',
             message: $('#posttext').val()
@@ -88,6 +131,9 @@
         }, res => {
           console.log(res);
           $('#posttext').val('');
+          window.setTimeout(() => {
+            refresh();
+          }, 5000);
         });
       }
     </script>

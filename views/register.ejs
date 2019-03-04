@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>Register</title>
+  </head>
+  <body>
+    <div class="container">
+      <br>
+      <h2>Register</h2>
+      <br>
+      <form method="post" action="/register" autocomplete="off">
+        <div class="form-group">
+          <label>id</label>
+          <input type="text" class="form-control is-valid" name="id" value="<%= id %>" placeholder="your id, if you see this text, sth wrong" required readonly> <!-- http://bit.ly/2SIsTA0 -->
+        </div>
+        <div class="form-group">
+          <label for="nameInput">ชื่อ (แก้ทีหลังได้)</label>
+          <input type="text" class="form-control" id="nameInput" aria-describedby="emailHelp" placeholder="ใส่ชื่อ" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="passwordInput">รหัสผ่าน</label>
+          <input type="password" class="form-control" id="passwordInput" placeholder="รหัสผ่าน" name="password" required>
+          <div class="invalid-feedback">
+            รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษรและเป็นอักษรปกติ
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="passwordConfirmInput">ยืนยันรหัสผ่าน</label>
+          <input type="password" class="form-control" id="passwordConfirmInput" placeholder="ยืนยันรหัสผ่าน" name="passwordConfirm" required>
+          <div class="invalid-feedback">
+            รหัสผ่านไม่ตรงกัน
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">สมัคร</button>
+      </form>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <script>
+      const $nameInput = $('#nameInput');
+      const $form = $('form');
+      // const $formSubmit = $('#formSubmit');
+      const $passwordInput = $('#passwordInput');
+      const $passwordConfirmInput = $('#passwordConfirmInput');
+      [$nameInput, $passwordConfirmInput, $passwordInput].forEach(e => {
+        e.focus(event => {
+          e.removeClass('is-valid');
+          e.removeClass('is-invalid');
+        });
+      });
+      $nameInput.on('focusout', event => {
+        if($nameInput.val().length > 0) $nameInput.addClass('is-valid');
+      });
+      $passwordInput.on('focus', event => {
+        if($passwordConfirmInput.hasClass('is-valid') || $passwordConfirmInput.hasClass('is-invalid')) {
+          $passwordConfirmInput.removeClass('is-valid');
+          $passwordConfirmInput.removeClass('is-invalid');
+          $passwordConfirmInput.addClass('is-validating');
+        }
+      });
+      $passwordInput.on('focusout', event => {
+        if($passwordConfirmInput.hasClass('is-validating')) {
+          $passwordConfirmInput.trigger('focusout');
+        }
+        if($passwordInput.val().length < 4) $passwordInput.addClass('is-invalid');
+        else if(/[^\x00-\x7F]/.test($passwordInput.val())) $passwordInput.addClass('is-invalid');
+        else $passwordInput.addClass('is-valid');
+      });
+      $passwordConfirmInput.on('focusout', event => {
+        if($passwordInput.val() != $passwordConfirmInput.val()) $passwordConfirmInput.addClass('is-invalid');
+        else $passwordConfirmInput.addClass('is-valid');
+      });
+      $form.on('submit', function(event) {
+        if ($('form input:not(.is-valid)').length > 0) {
+          event.preventDefault();
+          event.stopPropagation();
+          $('form input:not(.is-valid)').each(function(i) {
+            $(this).trigger('focusout');
+          });
+        }
+        else $('input[type=submit]', this).attr('disabled', 'disabled');
+      });
+    </script>
+  </body>
+</html>
