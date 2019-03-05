@@ -2,11 +2,28 @@ const path = require('path');
 const session = require('express-session');
 const express = require('express');
 const app = express();
-const secret = require(__dirname + '/secret.json');
+const secret = require('./app/secret.json');
 const bodyParser = require('body-parser');
 const chalk = require('chalk');
 const EventEmitter = require('events');
 const flash = require('connect-flash');
+const Chat = require('./app/chat.js');
+
+const Chatkit = require('@pusher/chatkit-server')
+const chatkit = new Chatkit.default({
+  instanceLocator: "v1:us1:c7e77688-6e44-4fee-8b57-baf98c7f74dd",
+  key: secret.chatkit
+})
+
+const Pusher = require('pusher');
+let pusher = new Pusher({
+  appId: '728436',
+  key: '530ce917c255ae52ef75',
+  secret: secret.pusher,
+  cluster: 'ap2',
+  encrypted: true
+});
+
 
 const mongoose = require('mongoose');
 mongoose.set('useNewUrlParser', false); // true if want to use srv
@@ -100,7 +117,7 @@ let token;
 let feed = client.feed('group', 'si128');
 
 app.get('/', (req, res, next) => {
-  console.log(req.flash('error'));
+  console.log(req.flash('error'))
   token = client.createUserToken('jew');
   feedToken = feed.token; // http://bit.ly/2SDaxFv
   // console.log(req.user);
@@ -120,7 +137,7 @@ app.get('/checkid', (req, res, next) => {
 
 app.post('/post', (req, res, next) => {
   // console.log(req.body);
-  feed.addActivity(req.body.activity);
+  if(req.body.activity.actor) feed.addActivity(req.body.activity);
   res.sendStatus(200);
 });
 
@@ -137,19 +154,35 @@ app.get('/register', (req, res, next) => {
   });
 });
 
-app.post('/register', function(req, res){
-  if(req.body.password != req.body.passwordConfirm) return res.status(500).send("{error: \"Passwords don't match\"}").end();
-  // console.log(req.body);
-  let newUser = new User({
-    id: req.body.id,
-    name: req.body.name,
-    password: req.body.password,
-  });
+app.post('/register', async function(req, res, next){
+  try {
+    if(req.body.password != req.body.passwordConfirm) return res.status(500).send("{error: \"Passwords don't match\"}").end();
+    let newUser = new User({
+      id: req.body.id,
+      name: req.body.name,
+      password: req.body.password,
+      chatId: await Chat.generateChatId(req.body.id)
+    });
 
-  User.createUser(newUser, function(err, user){
-    if(err) throw err;
-    res.redirect('/');
-  });
+    /* User.createUser(newUser, function(err, user){
+      if(err) throw err;
+      res.redirect('/');
+    }); */
+    let user = await User.createUser(newUser)
+    // console.log(user);
+    await chatkit.createUser({
+      id: user.chatId + '',
+      name: user.name
+    })
+    await chatkit.addUsersToRoom({
+      roomId: '19390846', // General room
+      userIds: [user.chatId + '']
+    })
+    // console.log(user);
+    return res.redirect('/')
+  } catch(err) {
+    next(err);
+  }
 });
 
 // Endpoint to login
@@ -166,7 +199,6 @@ app.get('/user', function(req, res){
   res.send(req.user);
 })
 
-
 // Endpoint to logout
 app.get('/logout', function(req, res){
   req.logout();
@@ -174,9 +206,22 @@ app.get('/logout', function(req, res){
   console.log(req.user);
 });
 
+app.get('/chat', (req, res, next) => {
+  // console.log(req.isAuthenticated());
+  if(!req.isAuthenticated()) return res.redirect('/');
+  res.render('chat.ejs', {user: req.user});
+});
+
+app.get('/trigger', (req, res) => {
+  pusher.trigger('my-channel', 'my-event', {
+    "message": "hello world"
+  });
+})
+
 app.use(function (err, req, res, next) {
-  console.log(err)
-  res.status(500).send('Something broke!');
+  console.log(err);
+  req.flash('error', err);
+  return res.redirect('/');
 })
 
 // start

@@ -61,4 +61,4 @@ typings/
 .next
 
 # my custom gitignore
-secret.json
+app/secret.json

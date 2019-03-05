@@ -1,0 +1,78 @@
+<html lang=en>
+  <head>
+    <meta charset=utf-8>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>Chatkit demo</title>
+  </head>
+  <body>
+    <div class="container">
+      <ul id="message-list"></ul>
+      <form id="message-form" class="form-inline">
+          <input type='text' class="form-control mr-2" id='message-text'>
+          <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js" integrity="sha256-7/yoZS3548fXSRXqc/xYzjsmuW3sFKzuvOCHd06Pmps=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@pusher/chatkit-client@1/dist/web/chatkit.js"></script>
+    <script>
+      const tokenProvider = new Chatkit.TokenProvider({
+        url: "https://us1.pusherplatform.io/services/chatkit_token_provider/v1/c7e77688-6e44-4fee-8b57-baf98c7f74dd/token"
+      });
+
+      const chatManager = new Chatkit.ChatManager({
+        instanceLocator: "v1:us1:c7e77688-6e44-4fee-8b57-baf98c7f74dd",
+        userId: "<%= user.chatId %>",
+        tokenProvider: tokenProvider
+      });
+
+      let cur, userMap;
+
+      let ready = chatManager
+        .connect()
+        .then(currentUser => {
+          cur = currentUser;
+          return currentUser.subscribeToRoom({
+            roomId: currentUser.rooms[0].id,
+            hooks: {
+              onMessage: message => {
+                ready.then(() => {
+                  const ul = document.getElementById("message-list");
+                  const li = document.createElement("li");
+                  li.appendChild(
+                    document.createTextNode(`${userMap[message.senderId]}: ${message.text}`)
+                  );
+                  console.log(message);
+                  ul.appendChild(li);
+                });
+              }
+            }
+          })
+        })
+        .then(room => {
+          // http://bit.ly/2SGpEJy
+          userMap = _.reduce(room.users, function(result, value, key) {
+            result[value.id] = value.name;
+            return result;
+          }, {}) 
+          room.users;
+          const form = document.getElementById("message-form");
+          form.addEventListener("submit", e => {
+            e.preventDefault();
+            const input = document.getElementById("message-text");
+            cur.sendMessage({
+              text: input.value,
+              roomId: cur.rooms[0].id
+            });
+            input.value = "";
+          });
+        })
+        .catch(error => {
+          console.error("error:", error);
+        });
+    </script>
+  </body>
+</html>
